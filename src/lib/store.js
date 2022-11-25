@@ -18,7 +18,7 @@ commands:
   "JSON -> Yaml":
     command: |
       h()
-      .loadjons()
+      .loadjson()
       .dumpyaml()
   "Yaml":
     command: |
@@ -47,7 +47,7 @@ commands:
       .loadyaml()
       // 将data转换为stringData
       .at('$.data')
-      .each((k, v)=>v.b64dec())
+      .each(v=>v.b64dec())
       .moveTo('.stringData')
       // 删除多余字段
       .at('$.metadata')
@@ -60,6 +60,21 @@ commands:
       // 展示为Yaml
       .at('$')
       .dumpyaml()
+  "RandomString":
+    command: |
+      h()
+      .randoms()
+  "Timestamp":
+    command: |
+      h()
+      .split('\n')
+      .each(v=>
+         v.data.length===0?'':
+         v.timestamp('iso').data
+         + ' | ' +
+         v.timestamp('unix_ms').data
+      )
+      .join()
 current:
   name: Custom
   command: |
@@ -70,8 +85,19 @@ current:
   value: |
     # 数据
     test: Test
-history: {}
+history:
+  RandomString: |
+    32 d
+    32 d
 
+    24 d
+    24 d
+
+    12 d
+    12 d
+
+    8 d
+    8 d
 `;
 
 /**
