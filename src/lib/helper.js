@@ -83,7 +83,8 @@ class JSONSerde extends BaseSerde {
 }
 class JSSerde extends BaseSerde {
     load(value) {
-        return Function('return ( ' + value + ' )')();
+        let env = `let True=true,False=false,None=null;`
+        return Function(env + '\nreturn ( ' + value + ' )')();
     }
     dump(value) {
         return JSON.stringify(value, null, 2);
