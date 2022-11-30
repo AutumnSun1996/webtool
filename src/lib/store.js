@@ -67,7 +67,7 @@ commands:
   "Timestamp":
     command: |
       h()
-      .split('\n')
+      .split('\\n')
       .each(v=>
          v.data.length===0?'':
          v.timestamp('iso').data
