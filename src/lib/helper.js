@@ -5,7 +5,7 @@ import cryptoRandomString from 'crypto-random-string';
 
 window.DateTime = DateTime;
 
-function parseRandomConfig(config1, config2) {
+function getRandomString(config1, config2) {
     let prefixMap = {
         'hex': { type: 'hex' },
         'b64': { type: 'base64' },
@@ -21,9 +21,22 @@ function parseRandomConfig(config1, config2) {
         config1 = { length: 16 };
     }
     if (typeof config2 === 'string') {
+        let match;
+        match = /port(\s+\d+)?(\s+\d+)?/.exec(config2);
+        if (match) {
+            // port [min] [max]
+            const randomBuffer = new Uint32Array(1);
+            crypto.getRandomValues(randomBuffer);
+            let randVal = randomBuffer[0] / 0xffffffff;
+            let minVal = parseInt(match[1] || 10000);
+            let maxVal = parseInt(match[2] || 65536);
+            if (minVal > maxVal) { [minVal, maxVal] = [maxVal, minVal] };
+            console.log('get port', minVal, maxVal, randVal);
+            return Math.floor((maxVal - minVal) * randVal + minVal);
+        }
         // <len> ' ' <type-prefix>
         // <len> ' ' 'c:'/'char:'/'chars:' <chars>
-        let match = /(\d+)\s+(c\:)?(\w+)/.exec(config2);
+        match = /(\d+)\s+(c\:)?(\w+)/.exec(config2);
         if (match) {
             config2 = { length: parseInt(match[1]) };
             if (match[2]) {
@@ -40,7 +53,7 @@ function parseRandomConfig(config1, config2) {
     } else if (typeof config2 !== 'object') {
         config2 = {};
     }
-    return { ...config1, ...config2 };
+    return cryptoRandomString({ ...config1, ...config2 });
 }
 
 class BaseSerde {
@@ -428,9 +441,8 @@ class Helper {
                 lines.push('')
                 continue;
             }
-            let lineConfig = parseRandomConfig(config, val);
             // console.log('random', lineConfig);
-            lines.push(cryptoRandomString(lineConfig));
+            lines.push(getRandomString(config, val));
         }
         return this.set(lines.join('\n'));
     }
