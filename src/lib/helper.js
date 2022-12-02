@@ -3,13 +3,16 @@ import { Buffer } from 'buffer';
 import { DateTime } from "luxon";
 import cryptoRandomString from 'crypto-random-string';
 
+
 window.DateTime = DateTime;
 
 function getRandomString(config1, config2) {
     let prefixMap = {
         'hex': { type: 'hex' },
         'b64': { type: 'base64' },
+        'b64url': { type: 'base64', url_safe: true },
         'base64': { type: 'base64' },
+        'base64url': { type: 'base64', url_safe: true },
         'alphanumeric': { characters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' },
         'distinguishable': { characters: '23456789abcdefghjkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ' },
         'Distinguishable': { characters: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' },
@@ -53,7 +56,17 @@ function getRandomString(config1, config2) {
     } else if (typeof config2 !== 'object') {
         config2 = {};
     }
-    return cryptoRandomString({ ...config1, ...config2 });
+    let config = { ...config1, ...config2 };
+    if (config.type === 'base64') {
+        const randomBuffer = new Uint8Array(config.length);
+        crypto.getRandomValues(randomBuffer);
+        let value = Buffer.from(randomBuffer).toString('base64');
+        if (config.url_safe) {
+            value = value.replace(/\+/g, '_').replace(/\//g, '_')
+        }
+        return value;
+    }
+    return cryptoRandomString(config);
 }
 
 class BaseSerde {
@@ -166,22 +179,7 @@ class DateSerde extends BaseSerde {
         return value.toISO()
     }
 }
-// FIXME:
-function utf8Toascii(data) {
-    CodecRe
-    const codeUnits = new Uint16Array(data.length);
-    for (let i = 0; i < codeUnits.length; i++) {
-        codeUnits[i] = data.charCodeAt(i);
-    }
-    return String.fromCharCode(...new Uint8Array(codeUnits.buffer));
-}
-function asciiToUtf8(data) {
-    const bytes = new Uint8Array(data.length);
-    for (let i = 0; i < bytes.length; i++) {
-        bytes[i] = data.charCodeAt(i);
-    }
-    return String.fromCharCode(...new Uint16Array(bytes.buffer));
-}
+
 class Base64Serde extends BaseSerde {
     auto(value) {
         let action;
@@ -199,7 +197,10 @@ class Base64Serde extends BaseSerde {
         return Buffer.from(value, 'base64').toString('utf8');
     }
     dump(value) {
-        return Buffer.from(value, 'utf8').toString('base64');
+        if (!(value instanceof Buffer)) {
+            value = Buffer.from(value, 'utf8')
+        }
+        return value.toString('base64');
     }
 }
 class HexSerde extends Base64Serde {
@@ -207,7 +208,10 @@ class HexSerde extends Base64Serde {
         return Buffer.from(value, 'hex').toString('utf8');
     }
     dump(value) {
-        return Buffer.from(value, 'utf8').toString('hex');
+        if (!(value instanceof Buffer)) {
+            value = Buffer.from(value, 'utf8')
+        }
+        return value.toString('hex');
     }
 }
 const SerdeMap = {
