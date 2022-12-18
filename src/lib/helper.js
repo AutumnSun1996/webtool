@@ -3,9 +3,11 @@ import { Buffer } from 'buffer';
 import { DateTime } from "luxon";
 import cryptoRandomString from 'crypto-random-string';
 
-
 window.DateTime = DateTime;
 
+function capitalize(word) {
+    return word.slice(0, 1).toUpperCase() + word.slice(1).toLowerCase();
+}
 function getRandomString(config1, config2) {
     let prefixMap = {
         'hex': { type: 'hex' },
@@ -13,6 +15,7 @@ function getRandomString(config1, config2) {
         'b64url': { type: 'base64', url_safe: true },
         'base64': { type: 'base64' },
         'base64url': { type: 'base64', url_safe: true },
+        'words': { type: 'words' },
         'alphanumeric': { characters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' },
         'distinguishable': { characters: '23456789abcdefghjkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ' },
         'Distinguishable': { characters: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' },
@@ -57,6 +60,10 @@ function getRandomString(config1, config2) {
         config2 = {};
     }
     let config = { ...config1, ...config2 };
+    if (config.type === 'words') {
+        let value = niceware.generatePassphrase(config.length * 2);
+        return value.map(capitalize).join('');
+    }
     if (config.type === 'base64') {
         const randomBuffer = new Uint8Array(config.length);
         crypto.getRandomValues(randomBuffer);
